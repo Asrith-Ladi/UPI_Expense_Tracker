@@ -1,0 +1,48 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv/
+env/
+venv/
+
+# Logs
+logs/
+*.log
+
+# Sample/test data files (contain personal paths or sensitive data)
+sample_files/
+tests/
+test_upload.py
+
+# Secrets and sensitive configs
+.env
+*.env
+*.secret
+secrets/
+
+# Streamlit config (not needed in prod)
+.streamlit/
+
+# IDE files
+.idea/
+.vscode/
+*.suo
+*.user
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Node / Frontend build
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# Old/deprecated files
+old_files/
