@@ -32,7 +32,7 @@ export default function FilterSidebar({
           <Activity color="white" size={24} />
         </div>
         <h2 className="gradient-text" style={{ fontSize: 18, flex: 1 }}>
-          UPI Expense Tracker
+          UPI Analysis tracker
         </h2>
         {onCloseMobile && (
           <button className="sidebar-close-btn" onClick={onCloseMobile} aria-label="Close sidebar">

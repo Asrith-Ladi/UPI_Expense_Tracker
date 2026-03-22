@@ -22,7 +22,8 @@ This document maps UI areas to source files so you can jump straight to the righ
 | Area | File |
 |------|------|
 | Layout: sidebar, header, upload (top-left), step tabs, tab content | `src/AppShell.tsx` |
-| Step gating: tagging confirmed unlocks dashboard | `src/context/WorkflowContext.tsx` |
+| Step gating: tagging confirmed unlocks dashboard, real-time, and email | `src/context/WorkflowContext.tsx` |
+| Cash-flow period (daily / month / year) vs data span | `src/dashboard/granularity.ts`, `DashboardGranularityBar.tsx` |
 
 ## Feature modules
 
@@ -34,7 +35,7 @@ This document maps UI areas to source files so you can jump straight to the righ
 | Confirmation modal (tagging → dashboard) | `src/components/ConfirmDialog.tsx` |
 | Charts, metrics, transaction table | `src/dashboard/DashboardHome.tsx` |
 | Counterparty tagging, thresholds, expandable editable grid | `src/tagging/TaggingView.tsx` |
-| Email placeholder | `src/email/EmailIntegration.tsx` |
+| Gmail (OAuth + top 10 messages) | `src/email/EmailIntegration.tsx` — set `VITE_GOOGLE_CLIENT_ID` (see `frontend/.env.example`) |
 | Real-time placeholder (always available) | `src/realtime/RealtimeUpdates.tsx` |
 
 ## Shared types

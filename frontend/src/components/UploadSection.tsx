@@ -19,7 +19,7 @@ export default function UploadSection({ loading, uploadComplete, onTriggerFileDi
           <span className="upload-section-hint">
             {uploadComplete
               ? 'You can add more files anytime.'
-              : 'Paytm, PhonePe (PDF), or GPay — required before tagging & dashboard.'}
+              : 'Upload bank or UPI exports (Excel, CSV, PDF). Required before tagging; other tabs unlock after you confirm tagging.'}
           </span>
         </div>
         <button

@@ -12,7 +12,8 @@ type StepTabsProps = {
 export default function StepTabs({ activeTab, onTabChange, hasData, taggingConfirmed }: StepTabsProps) {
   const lockTagging = !hasData;
   const lockDashboard = !hasData || !taggingConfirmed;
-  const lockEmail = !hasData;
+  const lockRealtime = !taggingConfirmed;
+  const lockEmail = !taggingConfirmed;
 
   const renderTab = (id: AppTab, label: string, Icon: typeof Tags, locked: boolean, title: string) => (
     <button
@@ -33,8 +34,14 @@ export default function StepTabs({ activeTab, onTabChange, hasData, taggingConfi
     <nav className="app-top-tabs app-step-tabs" aria-label="Workflow steps">
       {renderTab('tagging', 'Tagging', Tags, lockTagging, 'Upload a document first to unlock tagging.')}
       {renderTab('dashboard', 'Dashboard', LayoutDashboard, lockDashboard, 'Complete tagging confirmation to unlock the dashboard.')}
-      {renderTab('realtime', 'Real-time updates', Radio, false, 'Real-time updates')}
-      {renderTab('email', 'Email integration', Mail, lockEmail, 'Upload a document first to unlock email integration.')}
+      {renderTab(
+        'realtime',
+        'Real-time updates',
+        Radio,
+        lockRealtime,
+        'Confirm tagging to unlock real-time updates.'
+      )}
+      {renderTab('email', 'Email integration', Mail, lockEmail, 'Confirm tagging to unlock Gmail integration.')}
     </nav>
   );
 }

@@ -21,7 +21,7 @@ function AppShellInner({ onLogout }: AppShellProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<AppTab>('realtime');
+  const [activeTab, setActiveTab] = useState<AppTab>('tagging');
 
   const [filters, setFilters] = useState<FilterState>({
     startDate: '',
@@ -146,20 +146,6 @@ function AppShellInner({ onLogout }: AppShellProps) {
     return Object.values(grouped).sort((a, b) => b.Debit - a.Debit);
   }, [filteredData]);
 
-  const timelineData = useMemo(() => {
-    const grouped = filteredData.reduce(
-      (acc: Record<string, { date: string; Credit: number; Debit: number }>, curr) => {
-        const date = curr.Date;
-        if (!acc[date]) acc[date] = { date, Credit: 0, Debit: 0 };
-        acc[date].Credit += curr.Credit;
-        acc[date].Debit += curr.Debit;
-        return acc;
-      },
-      {}
-    );
-    return Object.values(grouped).sort((a, b) => a.date.localeCompare(b.date));
-  }, [filteredData]);
-
   const hasData = data.length > 0;
 
   const handleConfirmTagging = useCallback(() => {
@@ -205,10 +191,21 @@ function AppShellInner({ onLogout }: AppShellProps) {
                 <Menu size={22} />
               </button>
               <div>
-                <h1 style={{ fontSize: 22, marginBottom: 2 }}>UPI Expense Tracker</h1>
-                <p className="text-muted" style={{ fontSize: 13 }}>
-                  Paytm, PhonePe &amp; GPay analysis
-                </p>
+                <h1 style={{ fontSize: 22, marginBottom: 4 }}>UPI Analysis tracker</h1>
+                {!hasData ? (
+                  <p className="app-shell-subtitle app-shell-subtitle--prompt">
+                    Please upload your statement documents (Excel, CSV, or PDF) to begin. After processing, Tagging opens
+                    automatically; other steps stay locked until you confirm tagging.
+                  </p>
+                ) : !taggingConfirmed ? (
+                  <p className="app-shell-subtitle app-shell-subtitle--prompt">
+                    Review and confirm the Tagging step to unlock Dashboard, Real-time, and Email.
+                  </p>
+                ) : (
+                  <p className="text-muted" style={{ fontSize: 13 }}>
+                    Paytm, PhonePe &amp; GPay analysis
+                  </p>
+                )}
               </div>
             </div>
           </div>
@@ -271,9 +268,33 @@ function AppShellInner({ onLogout }: AppShellProps) {
             <p className="text-muted">Uncovering your financial footprint.</p>
           </div>
         ) : activeTab === 'realtime' ? (
-          <RealtimeUpdates />
+          taggingConfirmed ? (
+            <RealtimeUpdates />
+          ) : (
+            <div className="glass-panel step-locked-panel">
+              <h3 className="chart-title">Real-time updates</h3>
+              <p className="text-muted" style={{ lineHeight: 1.6 }}>
+                Confirm the Tagging step to unlock real-time updates.
+              </p>
+              <button type="button" className="btn btn-primary" style={{ marginTop: 16 }} onClick={() => setActiveTab('tagging')}>
+                Go to Tagging
+              </button>
+            </div>
+          )
         ) : activeTab === 'email' ? (
-          <EmailIntegration />
+          taggingConfirmed ? (
+            <EmailIntegration />
+          ) : (
+            <div className="glass-panel step-locked-panel">
+              <h3 className="chart-title">Email integration</h3>
+              <p className="text-muted" style={{ lineHeight: 1.6 }}>
+                Confirm the Tagging step to connect Gmail and load messages.
+              </p>
+              <button type="button" className="btn btn-primary" style={{ marginTop: 16 }} onClick={() => setActiveTab('tagging')}>
+                Go to Tagging
+              </button>
+            </div>
+          )
         ) : activeTab === 'tagging' && hasData ? (
           <TaggingView
             rows={filteredRowsWithIndices}
@@ -291,12 +312,7 @@ function AppShellInner({ onLogout }: AppShellProps) {
             </p>
           </div>
         ) : activeTab === 'dashboard' && hasData && taggingConfirmed ? (
-          <DashboardHome
-            filteredData={filteredData}
-            metrics={metrics}
-            chartData={chartData}
-            timelineData={timelineData}
-          />
+          <DashboardHome filteredData={filteredData} metrics={metrics} chartData={chartData} />
         ) : activeTab === 'dashboard' && hasData && !taggingConfirmed ? (
           <div className="glass-panel step-locked-panel">
             <h3 className="chart-title">Dashboard</h3>
