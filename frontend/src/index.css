@@ -1278,3 +1278,186 @@ body {
   font-size: 15px;
   line-height: 1.6;
 }
+
+.app-shell-subtitle {
+  font-size: 13px;
+  line-height: 1.45;
+  margin: 0;
+  max-width: 640px;
+}
+
+.app-shell-subtitle--prompt {
+  color: var(--text-secondary);
+}
+
+/* Dashboard: cash-flow period bar */
+.granularity-bar {
+  padding: 18px 22px;
+  border-radius: var(--radius-lg);
+  margin-bottom: 8px;
+}
+
+.granularity-bar-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.granularity-bar-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.granularity-bar-meta {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.granularity-bar-hint {
+  font-size: 12px;
+  margin: 0 0 14px;
+  line-height: 1.45;
+}
+
+.granularity-bar-segments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 4px;
+  background: rgba(0, 0, 0, 0.35);
+  border-radius: 999px;
+  border: 1px solid var(--border-color);
+}
+
+.granularity-seg {
+  flex: 1;
+  min-width: 100px;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  background: transparent;
+  color: var(--text-secondary);
+  transition: background 0.2s ease, color 0.2s ease, opacity 0.2s ease;
+}
+
+.granularity-seg.is-active {
+  color: #fff;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.35), rgba(59, 130, 246, 0.2));
+  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.12);
+}
+
+.granularity-seg.is-frozen:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  filter: grayscale(0.4);
+}
+
+.granularity-seg:not(:disabled):hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.granularity-seg.is-active:not(:disabled):hover {
+  color: #fff;
+}
+
+/* Gmail email integration */
+.email-gmail-root {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.email-gmail-card {
+  padding: 32px 28px;
+  border-radius: var(--radius-lg);
+  max-width: 640px;
+}
+
+.email-doc-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--accent-secondary);
+  margin-bottom: 20px;
+}
+
+.email-doc-link:hover {
+  text-decoration: underline;
+}
+
+.email-client-field {
+  margin-bottom: 16px;
+}
+
+.email-connect-btn {
+  width: 100%;
+  justify-content: center;
+}
+
+.email-error-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 16px;
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  color: var(--danger);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.email-gmail-table-wrap {
+  padding: 24px;
+  border-radius: var(--radius-lg);
+}
+
+.email-table-scroll {
+  overflow-x: auto;
+  max-height: 480px;
+  overflow-y: auto;
+}
+
+.email-messages-table th,
+.email-messages-table td {
+  vertical-align: top;
+}
+
+.email-cell-from {
+  font-size: 13px;
+  max-width: 220px;
+  word-break: break-word;
+}
+
+.email-cell-snippet {
+  font-size: 12px;
+  max-width: 320px;
+}
+
+.email-cell-date {
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.spin {
+  animation: spin 0.9s linear infinite;
+}

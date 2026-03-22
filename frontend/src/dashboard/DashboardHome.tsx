@@ -1,3 +1,4 @@
+import { useEffect, useMemo, useState } from 'react';
 import { List, TrendingUp, TrendingDown, IndianRupee } from 'lucide-react';
 import {
   BarChart,
@@ -15,6 +16,13 @@ import {
   Line,
 } from 'recharts';
 import type { Transaction } from '../types/transaction';
+import DashboardGranularityBar from './DashboardGranularityBar';
+import {
+  aggregateTimeline,
+  dataSpanDays,
+  enabledGranularities,
+  type Granularity,
+} from './granularity';
 
 const COLORS = ['#8b5cf6', '#ec4899', '#10b981', '#f59e0b', '#3b82f6', '#ef4444', '#6366f1', '#14b8a6'];
 
@@ -49,12 +57,45 @@ type DashboardHomeProps = {
     net: number;
   };
   chartData: { name: string; Credit: number; Debit: number; value: number }[];
-  timelineData: { date: string; Credit: number; Debit: number }[];
 };
 
-export default function DashboardHome({ filteredData, metrics, chartData, timelineData }: DashboardHomeProps) {
+export default function DashboardHome({ filteredData, metrics, chartData }: DashboardHomeProps) {
+  const dates = useMemo(() => filteredData.map((r) => r.Date).filter(Boolean), [filteredData]);
+  const daysSpan = useMemo(() => dataSpanDays(dates), [dates]);
+  const enabled = useMemo(() => enabledGranularities(daysSpan), [daysSpan]);
+
+  const [granularity, setGranularity] = useState<Granularity>('daily');
+
+  useEffect(() => {
+    setGranularity((g) => (enabled.includes(g) ? g : enabled[0]));
+  }, [enabled]);
+
+  const timelineData = useMemo(
+    () => aggregateTimeline(filteredData, granularity),
+    [filteredData, granularity]
+  );
+
+  const lineChartData = useMemo(
+    () => timelineData.map((p) => ({ ...p, date: p.label })),
+    [timelineData]
+  );
+
+  const timelineTitle =
+    granularity === 'daily'
+      ? 'Cash flow (daily)'
+      : granularity === 'month'
+        ? 'Cash flow (by month)'
+        : 'Cash flow (by year)';
+
   return (
     <>
+      <DashboardGranularityBar
+        enabled={enabled}
+        value={granularity}
+        onChange={setGranularity}
+        daysSpan={daysSpan}
+      />
+
       <div className="metrics-grid">
         <MetricCard
           title="Total Transactions"
@@ -106,7 +147,7 @@ export default function DashboardHome({ filteredData, metrics, chartData, timeli
               </Pie>
               <RechartsTooltip
                 contentStyle={{ background: 'var(--bg-top)', border: '1px solid var(--border-color)', borderRadius: 8 }}
-                    formatter={(value) => `₹${Number(value ?? 0).toLocaleString()}`}
+                formatter={(value) => `₹${Number(value ?? 0).toLocaleString()}`}
               />
               <Legend verticalAlign="bottom" height={36} />
             </PieChart>
@@ -132,13 +173,15 @@ export default function DashboardHome({ filteredData, metrics, chartData, timeli
       </div>
 
       <div className="glass-panel chart-container" style={{ minHeight: 400 }}>
-        <h3 className="chart-title">Cash Flow Timeline</h3>
+        <h3 className="chart-title">{timelineTitle}</h3>
         <ResponsiveContainer width="100%" height={350}>
-          <LineChart data={timelineData}>
+          <LineChart data={lineChartData}>
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-            <XAxis dataKey="date" stroke="var(--text-secondary)" />
+            <XAxis dataKey="date" stroke="var(--text-secondary)" tick={{ fontSize: 11 }} />
             <YAxis stroke="var(--text-secondary)" />
-            <RechartsTooltip contentStyle={{ background: 'var(--bg-top)', border: '1px solid var(--border-color)', borderRadius: 8 }} />
+            <RechartsTooltip
+              contentStyle={{ background: 'var(--bg-top)', border: '1px solid var(--border-color)', borderRadius: 8 }}
+            />
             <Legend />
             <Line type="monotone" dataKey="Credit" stroke="var(--success)" strokeWidth={3} dot={false} />
             <Line type="monotone" dataKey="Debit" stroke="var(--danger)" strokeWidth={3} dot={false} />
