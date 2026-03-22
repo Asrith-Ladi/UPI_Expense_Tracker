@@ -1872,6 +1872,16 @@ body {
   border: 1px solid var(--border-color);
 }
 
+.email-messages-table {
+  table-layout: fixed;
+  width: 100%;
+}
+
+.email-messages-table th.th-date { width: 15%; }
+.email-messages-table th.th-merchant { width: 20%; }
+.email-messages-table th.th-amount { width: 15%; }
+.email-messages-table th.th-snippet { width: 50%; }
+
 .email-summary-empty {
   font-size: 13px;
   color: var(--text-secondary);

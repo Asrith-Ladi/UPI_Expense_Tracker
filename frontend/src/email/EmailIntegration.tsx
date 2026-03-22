@@ -76,11 +76,19 @@ async function fetchMessageRow(id: string, token: string): Promise<GmailMessageR
   let amount = '';
   let merchant = '';
 
-  const amtMatch = snip.match(/Transaction Amount:\s*(?:INR|Rs\.?)\s*([\d,.]+)/i);
+  const amtMatch = snip.match(/(?:Transaction Amount|Amount Debited):\s*(?:INR|Rs\.?)\s*([\d,.]+)/i);
   if (amtMatch) amount = amtMatch[1].replace(/,/g, '');
 
-  const merchMatch = snip.match(/Merchant Name:\s*(.*?)(?:\s*Axis Bank|$)/i);
-  if (merchMatch) merchant = merchMatch[1].trim();
+  const merchMatchCredit = snip.match(/Merchant Name:\s*(.*?)(?:\s*Axis Bank|$)/i);
+  if (merchMatchCredit && merchMatchCredit[1].trim()) {
+    merchant = merchMatchCredit[1].trim();
+  } else {
+    // Try Debit template
+    const merchMatchDebit = snip.match(/Transaction Info:\s*(.*?)(?:\s*$)/i);
+    if (merchMatchDebit) {
+      merchant = merchMatchDebit[1].trim();
+    }
+  }
 
   return {
     id,
@@ -341,10 +349,10 @@ export default function EmailIntegration() {
               <table className="data-table email-messages-table">
                 <thead>
                   <tr>
-                    <th>Date</th>
-                    <th>Merchant</th>
-                    <th>Amount</th>
-                    <th>Email snippet</th>
+                    <th className="th-date">Date</th>
+                    <th className="th-merchant">Merchant</th>
+                    <th className="th-amount">Amount</th>
+                    <th className="th-snippet">Email snippet</th>
                   </tr>
                 </thead>
                 <tbody>
