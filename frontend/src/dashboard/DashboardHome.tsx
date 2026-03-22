@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from 'react';
+import type { FilterState } from '../components/FilterSidebar';
 import { List, TrendingUp, TrendingDown, IndianRupee } from 'lucide-react';
 import {
   BarChart,
@@ -57,9 +58,12 @@ type DashboardHomeProps = {
     net: number;
   };
   chartData: { name: string; Credit: number; Debit: number; value: number }[];
+  filters: FilterState;
+  setFilters: Dispatch<SetStateAction<FilterState>>;
+  allCategories: string[];
 };
 
-export default function DashboardHome({ filteredData, metrics, chartData }: DashboardHomeProps) {
+export default function DashboardHome({ filteredData, metrics, chartData, filters, setFilters, allCategories }: DashboardHomeProps) {
   const dates = useMemo(() => filteredData.map((r) => r.Date).filter(Boolean), [filteredData]);
   const daysSpan = useMemo(() => dataSpanDays(dates), [dates]);
   const enabled = useMemo(() => enabledGranularities(daysSpan), [daysSpan]);
@@ -95,6 +99,85 @@ export default function DashboardHome({ filteredData, metrics, chartData }: Dash
         onChange={setGranularity}
         daysSpan={daysSpan}
       />
+
+      {/* Inline Dashboard Filters */}
+      <div className="glass-panel dashboard-inline-filters">
+        <div className="dif-group">
+          <label className="dif-label">Date Range</label>
+          <div className="dif-inputs">
+            <input
+              type="date"
+              className="input dif-input"
+              value={filters.startDate}
+              onChange={(e) => setFilters({ ...filters, startDate: e.target.value })}
+            />
+            <span className="dif-sep">to</span>
+            <input
+              type="date"
+              className="input dif-input"
+              value={filters.endDate}
+              onChange={(e) => setFilters({ ...filters, endDate: e.target.value })}
+            />
+          </div>
+        </div>
+
+        <div className="dif-separator" />
+
+        <div className="dif-group">
+          <label className="dif-label">Amount Range</label>
+          <div className="dif-inputs">
+            <input
+              type="number"
+              className="input dif-input"
+              placeholder="Min"
+              value={filters.minAmount || ''}
+              onChange={(e) => setFilters({ ...filters, minAmount: Number(e.target.value) })}
+            />
+            <span className="dif-sep">-</span>
+            <input
+              type="number"
+              className="input dif-input"
+              placeholder="Max"
+              value={filters.maxAmount || ''}
+              onChange={(e) => setFilters({ ...filters, maxAmount: Number(e.target.value) })}
+            />
+          </div>
+        </div>
+        
+        <div className="dif-separator" />
+
+        <div className="dif-group dif-group-cats">
+          <label className="dif-label">
+            Categories 
+            {filters.categories.length > 0 && (
+              <button 
+                className="dif-clear-btn" 
+                onClick={() => setFilters({ ...filters, categories: [] })}
+              >
+                Clear
+              </button>
+            )}
+          </label>
+          <div className="dif-categories-scroll">
+            {allCategories.map((cat) => (
+              <label key={cat} className="dif-category-pill">
+                <input
+                  type="checkbox"
+                  checked={filters.categories.includes(cat)}
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      setFilters((f) => ({ ...f, categories: [...f.categories, cat] }));
+                    } else {
+                      setFilters((f) => ({ ...f, categories: f.categories.filter((c) => c !== cat) }));
+                    }
+                  }}
+                />
+                {cat}
+              </label>
+            ))}
+          </div>
+        </div>
+      </div>
 
       <div className="metrics-grid">
         <MetricCard

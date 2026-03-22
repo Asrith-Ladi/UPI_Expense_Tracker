@@ -255,5 +255,92 @@ def telegram_send_email_summary(body: TelegramEmailSummary):
         return {"ok": False, "sent": False, "error": err}
 
 
+import io
+from fpdf import FPDF
+import requests
+
+def create_transactions_pdf(bank_name: str, rows: list) -> bytes:
+    pdf = FPDF(orientation="P", unit="mm", format="A4")
+    pdf.add_page()
+    
+    # We use a built-in font
+    pdf.set_font("helvetica", style="B", size=16)
+    pdf.cell(0, 10, f"{bank_name.upper()} - Recent Transactions Summary", new_x="LMARGIN", new_y="NEXT", align="C")
+    pdf.ln(5)
+
+    pdf.set_font("helvetica", style="B", size=10)
+    
+    # Table Header
+    # Date (35), From (50), Subject (105)
+    pdf.set_fill_color(240, 240, 240)
+    pdf.cell(35, 10, "Date", border=1, fill=True)
+    pdf.cell(50, 10, "From", border=1, fill=True)
+    pdf.cell(105, 10, "Subject", border=1, fill=True, new_x="LMARGIN", new_y="NEXT")
+
+    pdf.set_font("helvetica", size=9)
+    for r in rows:
+        # Get purely ascii text or replace non-ascii
+        date_str = r.date.encode('latin-1', 'replace').decode('latin-1')
+        from_str = r.from_.encode('latin-1', 'replace').decode('latin-1')
+        subj_str = r.subject.encode('latin-1', 'replace').decode('latin-1')
+        
+        # We need to handle multi-line cells if subject is long, but simple cell is easier for tight layout
+        # Let's truncate strings
+        if len(from_str) > 25:
+            from_str = from_str[:22] + "..."
+        if len(subj_str) > 60:
+            subj_str = subj_str[:57] + "..."
+
+        pdf.cell(35, 8, date_str, border=1)
+        pdf.cell(50, 8, from_str, border=1)
+        pdf.cell(105, 8, subj_str, border=1, new_x="LMARGIN", new_y="NEXT")
+
+    pdf.ln(5)
+    pdf.set_font("helvetica", style="I", size=8)
+    pdf.cell(0, 5, f"Total records: {len(rows)}. Generated automatically.", new_x="LMARGIN", new_y="NEXT", align="C")
+
+    # Output as bytes
+    return bytes(pdf.output())
+
+@app.post("/api/telegram/send-email-pdf")
+def telegram_send_email_pdf(body: TelegramEmailSummary):
+    """
+    Generates a PDF summary of the provided email rows and sends it to Telegram as a document.
+    """
+    token = (os.environ.get("TELEGRAM_BOT_TOKEN") or "").strip()
+    chat_id = (body.chat_id or "").strip()
+
+    if not token:
+        raise HTTPException(status_code=503, detail="TELEGRAM_BOT_TOKEN not set in server .env.")
+    if not chat_id:
+        raise HTTPException(status_code=400, detail="chat_id is required.")
+    
+    if not body.rows:
+        return {"ok": False, "sent": False, "error": "No data to send."}
+        
+    try:
+        pdf_bytes = create_transactions_pdf(body.bank or "Banking", body.rows)
+        
+        # Send to Telegram
+        url = f"https://api.telegram.org/bot{token}/sendDocument"
+        files = {
+            "document": ("Transactions_Summary.pdf", pdf_bytes, "application/pdf")
+        }
+        data = {
+            "chat_id": chat_id,
+            "caption": "📊 Here is your requested 10 recent transactions summary (PDF)."
+        }
+        resp = requests.post(url, data=data, files=files, timeout=30)
+        
+        if resp.status_code == 200:
+            return {"ok": True, "sent": True, "error": None}
+        else:
+            return {"ok": False, "sent": False, "error": f"Telegram API error {resp.status_code}: {resp.text}"}
+            
+    except Exception as e:
+        logger.warning(f"Failed to generate and send PDF: {e}")
+        return {"ok": False, "sent": False, "error": str(e)}
+
+
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

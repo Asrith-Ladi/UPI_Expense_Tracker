@@ -188,12 +188,8 @@ export default function EmailIntegration() {
     finally { setLoading(false); }
   }, [accessToken, selectedBank, runFetch]);
 
-  // ── Last-2-days rows ──────────────────────────────────────────────────────
-  const last2DaysRows = useMemo(() => {
-    if (!rows) return [];
-    const cutoff = Date.now() - 2 * 24 * 60 * 60 * 1000;
-    return rows.filter((r) => r.parsedMs >= cutoff);
-  }, [rows]);
+  // ── Top 10 Rows (Already limited by API to 10 max) ─────────
+  const top10Rows = useMemo(() => rows || [], [rows]);
 
   const sendToTelegram = useCallback(async () => {
     const chatId = tgChatId.trim();
@@ -203,14 +199,14 @@ export default function EmailIntegration() {
       const payload = {
         chat_id: chatId,
         bank: selectedBank,
-        rows: last2DaysRows.map((r) => ({
+        rows: top10Rows.map((r) => ({
           date: fmtDate(r.date),
           from_: r.from,
           subject: r.subject,
           snippet: r.snippet,
         })),
       };
-      const res = await fetch(`${API_BASE}/api/telegram/send-email-summary`, {
+      const res = await fetch(`${API_BASE}/api/telegram/send-email-pdf`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -223,7 +219,7 @@ export default function EmailIntegration() {
     } finally {
       setTgSending(false);
     }
-  }, [tgChatId, last2DaysRows, selectedBank]);
+  }, [tgChatId, top10Rows, selectedBank]);
 
   return (
     <div className="email-gmail-root">
@@ -304,7 +300,7 @@ export default function EmailIntegration() {
         )}
       </section>
 
-      {/* ── Premium: Last 2 Days Summary Panel ──────────────────────────── */}
+      {/* ── Premium: Top 10 Summary Panel ──────────────────────────── */}
       {rows && (
         <section className="glass-panel email-summary-premium">
           {/* Header */}
@@ -313,17 +309,17 @@ export default function EmailIntegration() {
               <Sparkles size={18} />
             </div>
             <div>
-              <h3 className="email-summary-premium__title">Last 2 Days · Transaction Emails</h3>
+              <h3 className="email-summary-premium__title">Top 10 Recent Transactions</h3>
               <p className="email-summary-premium__meta">
-                {last2DaysRows.length > 0
-                  ? `${last2DaysRows.length} email${last2DaysRows.length > 1 ? 's' : ''} collected from ${selectedBank}`
-                  : `No emails from ${selectedBank} in the last 2 days`}
+                {top10Rows.length > 0
+                  ? `Showing latest ${top10Rows.length} email${top10Rows.length > 1 ? 's' : ''} from ${selectedBank}`
+                  : `No emails found for ${selectedBank}`}
               </p>
             </div>
           </div>
 
           {/* Mini table */}
-          {last2DaysRows.length > 0 ? (
+          {top10Rows.length > 0 ? (
             <div className="email-table-scroll email-summary-table-wrap">
               <table className="data-table email-messages-table">
                 <thead>
@@ -335,10 +331,10 @@ export default function EmailIntegration() {
                   </tr>
                 </thead>
                 <tbody>
-                  {last2DaysRows.map((r) => (
+                  {top10Rows.map((r) => (
                     <tr key={r.id}>
                       <td className="email-cell-date">{fmtDate(r.date)}</td>
-                      <td className="email-cell-from">{r.from}</td>
+                      <td className="email-cell-from" style={{ fontWeight: 500 }}>{r.from}</td>
                       <td>{r.subject}</td>
                       <td className="text-muted email-cell-snippet">{r.snippet}</td>
                     </tr>
@@ -348,7 +344,7 @@ export default function EmailIntegration() {
             </div>
           ) : (
             <p className="email-summary-empty">
-              No messages matched the last 2 days. Older emails appear in the full list below.
+              No messages matched the query.
             </p>
           )}
 
@@ -373,22 +369,22 @@ export default function EmailIntegration() {
               type="button"
               className="btn btn-primary email-summary-send-btn"
               onClick={sendToTelegram}
-              disabled={tgSending || last2DaysRows.length === 0}
-              title={last2DaysRows.length === 0 ? 'No emails in last 2 days to send' : 'Send summary to Telegram'}
+              disabled={tgSending || top10Rows.length === 0}
+              title={top10Rows.length === 0 ? 'No emails to send' : 'Send summary PDF to Telegram'}
             >
               {tgSending ? (
-                <><Loader2 className="spin" size={16} /> Sending…</>
+                <><Loader2 className="spin" size={16} /> Generating PDF…</>
               ) : tgSent ? (
-                <><CheckCircle2 size={16} /> Sent ✅</>
+                <><CheckCircle2 size={16} /> PDF Sent ✅</>
               ) : (
-                <><Send size={16} /> Send to Telegram</>
+                <><Send size={16} /> Send as PDF to Telegram</>
               )}
             </button>
           </div>
 
           {tgSent && (
             <p className="email-summary-tg-success">
-              ✅ Summary sent to Telegram. Check your messages!
+              ✅ PDF Summary sent to Telegram. Check your messages!
             </p>
           )}
           {tgError && (
@@ -396,37 +392,6 @@ export default function EmailIntegration() {
               <AlertCircle size={16} /><span>{tgError}</span>
             </div>
           )}
-        </section>
-      )}
-
-      {/* ── Full 10-message table ────────────────────────────────────────── */}
-      {rows && rows.length > 0 && (
-        <section className="glass-panel email-gmail-table-wrap">
-          <h3 className="chart-title">
-            All fetched messages · <code>{bankQuery}</code>
-          </h3>
-          <div className="email-table-scroll">
-            <table className="data-table email-messages-table">
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>From</th>
-                  <th>Subject</th>
-                  <th>Snippet</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((r) => (
-                  <tr key={r.id}>
-                    <td className="email-cell-date">{fmtDate(r.date)}</td>
-                    <td className="email-cell-from">{r.from}</td>
-                    <td>{r.subject}</td>
-                    <td className="text-muted email-cell-snippet">{r.snippet}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
         </section>
       )}
 

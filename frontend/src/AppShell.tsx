@@ -1,7 +1,7 @@
 import { useState, useRef, useMemo, useCallback } from 'react';
-import { Menu, IndianRupee, Upload } from 'lucide-react';
+import { IndianRupee, Upload } from 'lucide-react';
 import UploadSection from './components/UploadSection';
-import FilterSidebar, { categoriesFromData, type FilterState } from './components/FilterSidebar';
+import { categoriesFromData, type FilterState } from './components/FilterSidebar';
 import StepTabs, { type AppTab } from './components/StepTabs';
 import DashboardHome from './dashboard/DashboardHome';
 import TaggingView from './tagging/TaggingView';
@@ -20,7 +20,6 @@ function AppShellInner({ onLogout }: AppShellProps) {
   const [data, setData] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<AppTab>('tagging');
 
   const [filters, setFilters] = useState<FilterState>({
@@ -155,17 +154,7 @@ function AppShellInner({ onLogout }: AppShellProps) {
 
   return (
     <div className="app-container">
-      {sidebarOpen && <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)} />}
-
-      <aside className={`sidebar${sidebarOpen ? ' open' : ''}`}>
-        <FilterSidebar
-          filters={filters}
-          setFilters={setFilters}
-          allCategories={allCategories}
-          onLogout={onLogout}
-          onCloseMobile={() => setSidebarOpen(false)}
-        />
-      </aside>
+      {/* Sidebar removed for inline dashboard filters */}
 
       <main className="main-content">
         <input
@@ -187,9 +176,7 @@ function AppShellInner({ onLogout }: AppShellProps) {
           </div>
           <div className="app-shell-header-mid">
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <button className="hamburger-btn" onClick={() => setSidebarOpen(true)} aria-label="Open filters">
-                <Menu size={22} />
-              </button>
+              {/* Hamburger removed */}
               <div>
                 <h1 style={{ fontSize: 22, marginBottom: 4 }}>UPI Analysis tracker</h1>
                 {!hasData ? (
@@ -208,6 +195,11 @@ function AppShellInner({ onLogout }: AppShellProps) {
                 )}
               </div>
             </div>
+          </div>
+          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center' }}>
+            <button className="btn btn-outline" onClick={onLogout} style={{ fontSize: 13, padding: '8px 16px' }}>
+              Logout
+            </button>
           </div>
         </header>
 
@@ -316,7 +308,14 @@ function AppShellInner({ onLogout }: AppShellProps) {
             </p>
           </div>
         ) : activeTab === 'dashboard' && hasData && taggingConfirmed ? (
-          <DashboardHome filteredData={filteredData} metrics={metrics} chartData={chartData} />
+          <DashboardHome 
+            filteredData={filteredData} 
+            metrics={metrics} 
+            chartData={chartData} 
+            filters={filters}
+            setFilters={setFilters}
+            allCategories={allCategories}
+          />
         ) : activeTab === 'dashboard' && hasData && !taggingConfirmed ? (
           <div className="glass-panel step-locked-panel">
             <h3 className="chart-title">Dashboard</h3>
@@ -328,12 +327,31 @@ function AppShellInner({ onLogout }: AppShellProps) {
             </button>
           </div>
         ) : activeTab === 'dashboard' && !hasData ? (
-          <div className="upload-zone" onClick={() => fileInputRef.current?.click()} style={{ cursor: 'pointer' }}>
-            <Upload className="upload-icon" />
-            <h3 style={{ marginBottom: 8, textAlign: 'center' }}>Upload to unlock</h3>
-            <p className="text-muted" style={{ maxWidth: 400, margin: '0 auto', textAlign: 'center' }}>
-              Add a statement from the top-left uploader or click here. The dashboard opens after tagging is confirmed.
-            </p>
+          <div className="premium-upload-wrapper">
+            <div className="premium-upload-zone" onClick={() => fileInputRef.current?.click()}>
+              <div className="premium-upload-icon-wrap glow-pulse">
+                <Upload size={32} strokeWidth={1.5} />
+              </div>
+              <h2 className="premium-upload-title">Connect your data</h2>
+              <p className="premium-upload-subtitle">
+                Upload your bank or UPI exports (Excel, CSV, PDF) to instantly generate AI-powered insights, tag categories, and build your dashboard.
+              </p>
+              <button className="btn btn-primary premium-upload-action">
+                Select Files to Begin
+              </button>
+            </div>
+            
+            <div className="premium-upload-features">
+              <div className="feature-item">
+                <div className="f-icon">🔒</div><span>Secure local parsing</span>
+              </div>
+              <div className="feature-item">
+                <div className="f-icon">✨</div><span>AI-powered auto-tagging</span>
+              </div>
+              <div className="feature-item">
+                <div className="f-icon">📊</div><span>Instant visual dashboards</span>
+              </div>
+            </div>
           </div>
         ) : null}
       </main>
