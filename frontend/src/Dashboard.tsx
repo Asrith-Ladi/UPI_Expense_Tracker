@@ -1,5 +1,6 @@
 import { useState, useRef, useMemo } from 'react';
-import { Upload, LogOut, List, TrendingUp, TrendingDown, Activity, IndianRupee, Menu, X } from 'lucide-react';
+import { Upload, LogOut, List, TrendingUp, TrendingDown, Activity, IndianRupee, Menu, X, Tags, LayoutDashboard, Mail } from 'lucide-react';
+import TaggingView from './TaggingView';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer,
   PieChart, Pie, Cell, LineChart, Line
@@ -31,10 +32,10 @@ const COLORS = ['#8b5cf6', '#ec4899', '#10b981', '#f59e0b', '#3b82f6', '#ef4444'
 
 // --- Helper Components ---
 const MetricCard = ({ title, value, change, isPositive, icon: Icon }: any) => (
-  <div className="glass-panel metric-card">
+  <div className="glass-panel metric-card" style={{ position: 'relative' }}>
+    <Icon size={20} style={{ color: "var(--accent-primary)", position: 'absolute', top: 20, right: 20 }} />
     <div className="metric-header">
       {title}
-      <Icon size={20} style={{ color: "var(--accent-primary)" }} />
     </div>
     <div className="metric-value">{value}</div>
     {change !== null && (
@@ -48,12 +49,15 @@ const MetricCard = ({ title, value, change, isPositive, icon: Icon }: any) => (
   </div>
 );
 
+type AppTab = 'tagging' | 'dashboard' | 'email';
+
 // --- Main Dashboard Component ---
 export default function Dashboard({ onLogout }: { onLogout: () => void }) {
   const [data, setData] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<AppTab>('tagging');
 
   // Filters State
   const [filters, setFilters] = useState<FilterState>({
@@ -271,7 +275,7 @@ export default function Dashboard({ onLogout }: { onLogout: () => void }) {
 
       {/* Main Content */}
       <main className="main-content">
-        <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+        <header className="dashboard-top-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <button className="hamburger-btn" onClick={() => setSidebarOpen(true)} aria-label="Open filters">
               <Menu size={22} />
@@ -297,17 +301,56 @@ export default function Dashboard({ onLogout }: { onLogout: () => void }) {
           </div>
         </header>
 
+        <nav className="app-top-tabs" aria-label="Main sections">
+          <button
+            type="button"
+            className={`app-tab ${activeTab === 'tagging' ? 'active' : ''}`}
+            onClick={() => setActiveTab('tagging')}
+          >
+            <Tags size={17} strokeWidth={2.25} />
+            Tagging
+          </button>
+          <button
+            type="button"
+            className={`app-tab ${activeTab === 'dashboard' ? 'active' : ''}`}
+            onClick={() => setActiveTab('dashboard')}
+          >
+            <LayoutDashboard size={17} strokeWidth={2.25} />
+            Dashboard
+          </button>
+          <button
+            type="button"
+            className={`app-tab ${activeTab === 'email' ? 'active' : ''}`}
+            onClick={() => setActiveTab('email')}
+          >
+            <Mail size={17} strokeWidth={2.25} />
+            Email integration
+          </button>
+        </nav>
+
         {error && (
           <div style={{ background: 'rgba(239, 68, 68, 0.1)', color: 'var(--danger)', padding: 16, borderRadius: 8, border: '1px solid var(--danger)' }}>
             <strong>Error:</strong> {error}
           </div>
         )}
 
-        {data.length === 0 && !loading && !error ? (
-          <div className="upload-zone" onClick={() => fileInputRef.current?.click()}>
+        {activeTab === 'email' && (
+          <section className="email-integration-panel glass-panel">
+            <div className="email-integration-icon-wrap">
+              <Mail size={36} strokeWidth={1.5} />
+            </div>
+            <h2 className="email-integration-title">Email integration</h2>
+            <p className="email-integration-copy">
+              Connect your inbox to pull statement attachments automatically. This section is coming next.
+            </p>
+          </section>
+        )}
+
+        {data.length === 0 && !loading && !error && activeTab === 'dashboard' ? (
+          <div className="upload-zone" onClick={() => fileInputRef.current?.click()} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
             <Upload className="upload-icon" />
-            <h3 style={{ marginBottom: 8 }}>Ready for your statements</h3>
-            <p className="text-muted" style={{ maxWidth: 400, margin: '0 auto' }}>
+            <h3 style={{ marginBottom: 8, textAlign: 'center' }}>Ready for your statements</h3>
+            <p className="text-muted" style={{ maxWidth: 400, margin: '0 auto', textAlign: 'center' }}>
               Drag and drop your files here or click to browse. We support Paytm (Excel/CSV), PhonePe (PDF - must contain 'phonepe' in filename), and GPay (PDF).
             </p>
           </div>
@@ -319,7 +362,9 @@ export default function Dashboard({ onLogout }: { onLogout: () => void }) {
             <h2 className="gradient-text" style={{ fontSize: 24, marginBottom: 8 }}>Processing Currency Data...</h2>
             <p className="text-muted">Uncovering your financial footprint.</p>
           </div>
-        ) : (
+        ) : activeTab === 'tagging' && !loading ? (
+          <TaggingView transactions={filteredData} />
+        ) : activeTab === 'dashboard' && !loading ? (
           <>
             <div className="metrics-grid">
               <MetricCard 
@@ -354,23 +399,6 @@ export default function Dashboard({ onLogout }: { onLogout: () => void }) {
 
             <div className="charts-grid">
               <div className="glass-panel chart-container">
-                <h3 className="chart-title">Income vs Expense by Category</h3>
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 50 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                    <XAxis dataKey="name" stroke="var(--text-secondary)" angle={-45} textAnchor="end" height={60} />
-                    <YAxis stroke="var(--text-secondary)" />
-                    <RechartsTooltip 
-                      contentStyle={{ background: 'var(--bg-top)', border: '1px solid var(--border-color)', borderRadius: 8 }}
-                      labelStyle={{ color: 'var(--text-primary)' }}
-                    />
-                    <Legend />
-                    <Bar dataKey="Credit" fill="var(--success)" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="Debit" fill="var(--danger)" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-              <div className="glass-panel chart-container">
                 <h3 className="chart-title">Expense Distribution</h3>
                 <ResponsiveContainer width="100%" height={300}>
                   <PieChart>
@@ -395,11 +423,28 @@ export default function Dashboard({ onLogout }: { onLogout: () => void }) {
                   </PieChart>
                 </ResponsiveContainer>
               </div>
+              <div className="glass-panel chart-container">
+                <h3 className="chart-title">Income vs Expense by Category</h3>
+                <ResponsiveContainer width="100%" height={400}>
+                  <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 50 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                    <XAxis dataKey="name" stroke="var(--text-secondary)" angle={-45} textAnchor="end" height={60} />
+                    <YAxis stroke="var(--text-secondary)" />
+                    <RechartsTooltip 
+                      contentStyle={{ background: 'var(--bg-top)', border: '1px solid var(--border-color)', borderRadius: 8 }}
+                      labelStyle={{ color: 'var(--text-primary)' }}
+                    />
+                    <Legend />
+                    <Bar dataKey="Credit" fill="var(--success)" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="Debit" fill="var(--danger)" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
             </div>
 
-            <div className="glass-panel chart-container" style={{ minHeight: 300 }}>
+            <div className="glass-panel chart-container" style={{ minHeight: 400 }}>
               <h3 className="chart-title">Cash Flow Timeline</h3>
-              <ResponsiveContainer width="100%" height={250}>
+              <ResponsiveContainer width="100%" height={350}>
                 <LineChart data={timelineData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
                   <XAxis dataKey="date" stroke="var(--text-secondary)" />
@@ -465,7 +510,7 @@ export default function Dashboard({ onLogout }: { onLogout: () => void }) {
               </div>
             </div>
           </>
-        )}
+        ) : null}
       </main>
     </div>
   );
