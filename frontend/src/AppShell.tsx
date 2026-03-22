@@ -237,27 +237,13 @@ function AppShellInner({ onLogout }: AppShellProps) {
               marginTop: 24,
             }}
           >
-            <div
-              className="rupee-loader pulse-animation"
-              style={{
-                width: 80,
-                height: 80,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                background: 'rgba(16, 185, 129, 0.1)',
-                borderRadius: '50%',
-                marginBottom: 24,
-                border: '2px solid var(--success)',
-                boxShadow: '0 0 30px rgba(16, 185, 129, 0.3)',
-              }}
-            >
-              <IndianRupee size={40} color="var(--success)" />
+            <div className="premium-rupee-loader">
+              <IndianRupee size={42} className="rupee-icon-glow" />
             </div>
-            <h2 className="gradient-text" style={{ fontSize: 24, marginBottom: 8 }}>
-              Processing Currency Data...
+            <h2 className="gradient-text" style={{ fontSize: 28, marginBottom: 12, fontWeight: 700 }}>
+              Processing transactions...
             </h2>
-            <p className="text-muted">Uncovering your financial footprint.</p>
+            <p className="text-muted" style={{ fontSize: 16 }}>Uncovering your financial footprint.</p>
           </div>
         ) : activeTab === 'realtime' ? (
           taggingConfirmed ? (

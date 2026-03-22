@@ -2092,7 +2092,7 @@ body {
 .dif-separator {
   width: 1px;
   height: 48px;
-  background: var(--border-color);
+  background: rgba(255, 255, 255, 0.25);
   margin: 0 8px;
 }
 
@@ -2143,4 +2143,53 @@ body {
 }
 .dif-clear-btn:hover {
   text-decoration: underline;
+}
+
+/* ── Premium Rupee Loader ── */
+.premium-rupee-loader {
+  position: relative;
+  width: 90px;
+  height: 90px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(16, 185, 129, 0.03);
+  border-radius: 50%;
+  margin-bottom: 32px;
+  box-shadow: 0 0 50px rgba(16, 185, 129, 0.15);
+}
+
+.premium-rupee-loader::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 3px solid rgba(16, 185, 129, 0.1);
+  border-top-color: var(--success);
+  border-right-color: rgba(16, 185, 129, 0.6);
+  animation: premium-loader-spin 1s linear infinite;
+}
+
+.premium-rupee-loader::after {
+  content: '';
+  position: absolute;
+  inset: -12px;
+  border-radius: 50%;
+  border: 1px dashed rgba(16, 185, 129, 0.3);
+  animation: premium-loader-spin 12s linear infinite reverse;
+}
+
+.rupee-icon-glow {
+  color: var(--success);
+  animation: premium-loader-pulse 2s ease-in-out infinite;
+  filter: drop-shadow(0 0 12px rgba(16, 185, 129, 0.5));
+}
+
+@keyframes premium-loader-spin {
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes premium-loader-pulse {
+  0%, 100% { transform: scale(0.92); opacity: 0.8; }
+  50% { transform: scale(1.15); opacity: 1; filter: drop-shadow(0 0 24px rgba(16, 185, 129, 0.9)); }
 }

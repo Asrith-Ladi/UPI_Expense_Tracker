@@ -15,6 +15,8 @@ export type GmailMessageRow = {
   date: string;         // raw RFC-2822 string from Gmail
   parsedMs: number;     // epoch ms for filtering
   snippet: string;
+  amount: string;
+  merchant: string;
 };
 
 declare global {
@@ -69,13 +71,26 @@ async function fetchMessageRow(id: string, token: string): Promise<GmailMessageR
   };
   const headers = data.payload?.headers;
   const dateStr = headerVal(headers, 'Date') || '';
+  const snip = data.snippet || '';
+  
+  let amount = '';
+  let merchant = '';
+
+  const amtMatch = snip.match(/Transaction Amount:\s*(?:INR|Rs\.?)\s*([\d,.]+)/i);
+  if (amtMatch) amount = amtMatch[1].replace(/,/g, '');
+
+  const merchMatch = snip.match(/Merchant Name:\s*(.*?)(?:\s*Axis Bank|$)/i);
+  if (merchMatch) merchant = merchMatch[1].trim();
+
   return {
     id,
     subject: headerVal(headers, 'Subject') || '(no subject)',
     from: headerVal(headers, 'From') || '—',
     date: dateStr,
     parsedMs: dateStr ? new Date(dateStr).getTime() : 0,
-    snippet: data.snippet || '',
+    snippet: snip,
+    amount,
+    merchant,
   };
 }
 
@@ -197,15 +212,17 @@ export default function EmailIntegration() {
     setTgSending(true); setTgSent(false); setTgError(null);
     try {
       const payload = {
-        chat_id: chatId,
-        bank: selectedBank,
-        rows: top10Rows.map((r) => ({
-          date: fmtDate(r.date),
-          from_: r.from,
-          subject: r.subject,
-          snippet: r.snippet,
-        })),
-      };
+          chat_id: chatId,
+          bank: selectedBank,
+          rows: top10Rows.map((r) => ({
+            date: fmtDate(r.date),
+            from_: r.from,
+            subject: r.subject,
+            snippet: r.snippet,
+            amount: r.amount,
+            merchant: r.merchant,
+          })),
+        };
       const res = await fetch(`${API_BASE}/api/telegram/send-email-pdf`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -320,26 +337,40 @@ export default function EmailIntegration() {
 
           {/* Mini table */}
           {top10Rows.length > 0 ? (
-            <div className="email-table-scroll email-summary-table-wrap">
+            <div className="email-table-scroll email-summary-table-wrap" style={{ maxHeight: 350, overflowY: 'auto' }}>
               <table className="data-table email-messages-table">
                 <thead>
                   <tr>
                     <th>Date</th>
-                    <th>From</th>
-                    <th>Subject</th>
-                    <th>Preview</th>
+                    <th>Merchant</th>
+                    <th>Amount</th>
+                    <th>Email snippet</th>
                   </tr>
                 </thead>
                 <tbody>
                   {top10Rows.map((r) => (
                     <tr key={r.id}>
                       <td className="email-cell-date">{fmtDate(r.date)}</td>
-                      <td className="email-cell-from" style={{ fontWeight: 500 }}>{r.from}</td>
-                      <td>{r.subject}</td>
-                      <td className="text-muted email-cell-snippet">{r.snippet}</td>
+                      <td style={{ fontWeight: 600 }}>{r.merchant || r.from}</td>
+                      <td style={{ fontWeight: 700, color: 'var(--text-primary)' }}>
+                        {r.amount ? `₹${Number(r.amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : '—'}
+                      </td>
+                      <td className="text-muted email-cell-snippet" style={{ maxWidth: 300 }} title={r.snippet}>
+                        {r.subject} - {r.snippet}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
+                <tfoot style={{ background: 'var(--bg-card)' }}>
+                  <tr>
+                    <td colSpan={2} style={{ textAlign: 'right', fontWeight: 600, padding: 12 }}>
+                      Total of 10 Transactions:
+                    </td>
+                    <td colSpan={2} style={{ fontWeight: 800, color: 'var(--success)', padding: 12, fontSize: 16 }}>
+                      ₹{top10Rows.reduce((sum, r) => sum + (Number(r.amount) || 0), 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                    </td>
+                  </tr>
+                </tfoot>
               </table>
             </div>
           ) : (

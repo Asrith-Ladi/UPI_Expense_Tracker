@@ -93,56 +93,64 @@ export default function DashboardHome({ filteredData, metrics, chartData, filter
 
   return (
     <>
-      <DashboardGranularityBar
-        enabled={enabled}
-        value={granularity}
-        onChange={setGranularity}
-        daysSpan={daysSpan}
-      />
-
       {/* Inline Dashboard Filters */}
-      <div className="glass-panel dashboard-inline-filters">
-        <div className="dif-group">
-          <label className="dif-label">Date Range</label>
-          <div className="dif-inputs">
-            <input
-              type="date"
-              className="input dif-input"
-              value={filters.startDate}
-              onChange={(e) => setFilters({ ...filters, startDate: e.target.value })}
-            />
-            <span className="dif-sep">to</span>
-            <input
-              type="date"
-              className="input dif-input"
-              value={filters.endDate}
-              onChange={(e) => setFilters({ ...filters, endDate: e.target.value })}
+      <div className="glass-panel dashboard-inline-filters" style={{ display: 'block' }}>
+        <h3 className="chart-title" style={{ margin: '0 0 16px', fontSize: 18 }}>Dashboard Filters</h3>
+        
+        <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 20 }}>
+          
+          <div className="dif-group">
+            <label className="dif-label">Cashflow Timeline</label>
+            <DashboardGranularityBar
+              enabled={enabled}
+              value={granularity}
+              onChange={setGranularity}
             />
           </div>
-        </div>
 
-        <div className="dif-separator" />
+          <div className="dif-separator" />
 
-        <div className="dif-group">
-          <label className="dif-label">Amount Range</label>
-          <div className="dif-inputs">
-            <input
-              type="number"
-              className="input dif-input"
-              placeholder="Min"
-              value={filters.minAmount || ''}
-              onChange={(e) => setFilters({ ...filters, minAmount: Number(e.target.value) })}
-            />
-            <span className="dif-sep">-</span>
-            <input
-              type="number"
-              className="input dif-input"
-              placeholder="Max"
-              value={filters.maxAmount || ''}
-              onChange={(e) => setFilters({ ...filters, maxAmount: Number(e.target.value) })}
-            />
+          <div className="dif-group">
+            <label className="dif-label">Date Range</label>
+            <div className="dif-inputs">
+              <input
+                type="date"
+                className="input dif-input"
+                value={filters.startDate}
+                onChange={(e) => setFilters({ ...filters, startDate: e.target.value })}
+              />
+              <span className="dif-sep">to</span>
+              <input
+                type="date"
+                className="input dif-input"
+                value={filters.endDate}
+                onChange={(e) => setFilters({ ...filters, endDate: e.target.value })}
+              />
+            </div>
           </div>
-        </div>
+
+          <div className="dif-separator" />
+
+          <div className="dif-group">
+            <label className="dif-label">Amount Range</label>
+            <div className="dif-inputs">
+              <input
+                type="number"
+                className="input dif-input"
+                placeholder="Min"
+                value={filters.minAmount || ''}
+                onChange={(e) => setFilters({ ...filters, minAmount: Number(e.target.value) })}
+              />
+              <span className="dif-sep">-</span>
+              <input
+                type="number"
+                className="input dif-input"
+                placeholder="Max"
+                value={filters.maxAmount || ''}
+                onChange={(e) => setFilters({ ...filters, maxAmount: Number(e.target.value) })}
+              />
+            </div>
+          </div>
         
         <div className="dif-separator" />
 
@@ -176,6 +184,7 @@ export default function DashboardHome({ filteredData, metrics, chartData, filter
               </label>
             ))}
           </div>
+        </div>
         </div>
       </div>
 

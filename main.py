@@ -204,6 +204,8 @@ class EmailSummaryRow(BaseModel):
     from_: str = ''
     subject: str = ''
     snippet: str = ''
+    amount: str = ''
+    merchant: str = ''
 
 class TelegramEmailSummary(BaseModel):
     chat_id: str
@@ -271,29 +273,40 @@ def create_transactions_pdf(bank_name: str, rows: list) -> bytes:
     pdf.set_font("helvetica", style="B", size=10)
     
     # Table Header
-    # Date (35), From (50), Subject (105)
+    # Date (35), Merchant (115), Amount (40)
     pdf.set_fill_color(240, 240, 240)
     pdf.cell(35, 10, "Date", border=1, fill=True)
-    pdf.cell(50, 10, "From", border=1, fill=True)
-    pdf.cell(105, 10, "Subject", border=1, fill=True, new_x="LMARGIN", new_y="NEXT")
+    pdf.cell(115, 10, "Merchant", border=1, fill=True)
+    pdf.cell(40, 10, "Amount (INR)", border=1, fill=True, new_x="LMARGIN", new_y="NEXT")
 
     pdf.set_font("helvetica", size=9)
+    total_amount = 0.0
+
     for r in rows:
         # Get purely ascii text or replace non-ascii
         date_str = r.date.encode('latin-1', 'replace').decode('latin-1')
-        from_str = r.from_.encode('latin-1', 'replace').decode('latin-1')
-        subj_str = r.subject.encode('latin-1', 'replace').decode('latin-1')
+        merch_str = (r.merchant or r.from_).encode('latin-1', 'replace').decode('latin-1')
+        amt_str = r.amount.encode('latin-1', 'replace').decode('latin-1') if r.amount else "0"
         
-        # We need to handle multi-line cells if subject is long, but simple cell is easier for tight layout
-        # Let's truncate strings
-        if len(from_str) > 25:
-            from_str = from_str[:22] + "..."
-        if len(subj_str) > 60:
-            subj_str = subj_str[:57] + "..."
+        try:
+            val = float(amt_str.replace(',', ''))
+            total_amount += val
+            amt_display = f"{val:,.2f}"
+        except ValueError:
+            amt_display = amt_str
+            
+        if len(merch_str) > 65:
+            merch_str = merch_str[:62] + "..."
 
         pdf.cell(35, 8, date_str, border=1)
-        pdf.cell(50, 8, from_str, border=1)
-        pdf.cell(105, 8, subj_str, border=1, new_x="LMARGIN", new_y="NEXT")
+        pdf.cell(115, 8, merch_str, border=1)
+        pdf.cell(40, 8, amt_display, border=1, align="R", new_x="LMARGIN", new_y="NEXT")
+
+    pdf.ln(2)
+    pdf.set_font("helvetica", style="B", size=11)
+    # Print total sum at bottom
+    pdf.cell(150, 10, "Total sum (Top 10):", border=1, align="R")
+    pdf.cell(40, 10, f"INR {total_amount:,.2f}", border=1, align="R", new_x="LMARGIN", new_y="NEXT")
 
     pdf.ln(5)
     pdf.set_font("helvetica", style="I", size=8)
