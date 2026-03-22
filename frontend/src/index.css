@@ -1462,9 +1462,46 @@ body {
   animation: spin 0.9s linear infinite;
 }
 
-.realtime-whatsapp-root {
+.realtime-telegram-root {
   max-width: 720px;
   margin: 0 auto;
+}
+
+.realtime-steps {
+  padding: 16px 18px;
+  margin-bottom: 18px;
+  text-align: left;
+}
+
+.realtime-steps-list {
+  margin: 10px 0 0;
+  padding-left: 1.25rem;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+
+.realtime-steps-list li {
+  margin-bottom: 10px;
+}
+
+.realtime-steps-list code {
+  font-size: 12px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.realtime-code-block {
+  margin: 8px 0 0;
+  padding: 10px 12px;
+  font-size: 12px;
+  border-radius: var(--radius-sm);
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--border-color);
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
 }
 
 .realtime-panel--wide {

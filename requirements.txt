@@ -1,5 +1,6 @@
 fastapi
 uvicorn
+python-dotenv
 python-multipart
 pydantic
 pandas==2.1.2

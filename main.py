@@ -1,6 +1,13 @@
 import os
 import json
+import urllib.error
+import urllib.request
+from pathlib import Path
 from typing import List, Dict, Any, Optional
+
+from dotenv import load_dotenv
+
+load_dotenv(Path(__file__).resolve().parent / ".env")
 from pydantic import BaseModel
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -115,29 +122,80 @@ async def process_statements(files: List[UploadFile] = File(...)):
     return {"data": records}
 
 
-class WhatsAppRegister(BaseModel):
-    """Stub payload for future WhatsApp Business / Twilio integration."""
-    phone: Optional[str] = None
+def telegram_send_message(token: str, chat_id: str, text: str) -> dict:
+    """POST sendMessage to Telegram Bot API (max 4096 chars)."""
+    url = f"https://api.telegram.org/bot{token}/sendMessage"
+    payload = json.dumps(
+        {"chat_id": chat_id, "text": text[:4096]},
+        ensure_ascii=False,
+    ).encode("utf-8")
+    req = urllib.request.Request(
+        url,
+        data=payload,
+        headers={"Content-Type": "application/json; charset=utf-8"},
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            return json.loads(resp.read().decode())
+    except urllib.error.HTTPError as e:
+        err_body = e.read().decode() if e.fp else str(e)
+        raise ValueError(f"Telegram API error {e.code}: {err_body}") from e
+
+
+class TelegramRegister(BaseModel):
+    """User opts in; Telegram bots use chat_id (not phone) to deliver messages."""
+    chat_id: str  # numeric string, e.g. "123456789"
+    phone: Optional[str] = None  # optional display / your records
     enabled: bool = False
     message_preview: Optional[str] = None
 
 
-@app.post("/api/whatsapp/register")
-def whatsapp_register(body: WhatsAppRegister):
+@app.post("/api/telegram/register")
+def telegram_register(body: TelegramRegister):
     """
-    Accepts user phone + opt-in for WhatsApp alerts (credit/debit text).
-    Does not send WhatsApp messages — connect Meta Cloud API or Twilio here.
+    Stores opt-in and sends one test message via Telegram Bot API when enabled.
+    Requires TELEGRAM_BOT_TOKEN in environment (.env) and a valid chat_id.
     """
+    token = (os.environ.get("TELEGRAM_BOT_TOKEN") or "").strip()
+    chat_id = (body.chat_id or "").strip()
+
     logger.info(
-        "WhatsApp register stub: phone=%s enabled=%s preview_chars=%s",
+        "Telegram register: chat_id=%s phone=%s enabled=%s token_set=%s",
+        chat_id,
         body.phone,
         body.enabled,
-        len(body.message_preview or ""),
+        bool(token),
     )
+
+    if not token:
+        raise HTTPException(
+            status_code=503,
+            detail="Server missing TELEGRAM_BOT_TOKEN. Copy .env.example to .env and set your bot token.",
+        )
+
+    telegram_sent = False
+    send_error: Optional[str] = None
+
+    if body.enabled:
+        if not chat_id:
+            raise HTTPException(
+                status_code=400,
+                detail="chat_id is required. Open Telegram, message your bot, then get your chat id from getUpdates.",
+            )
+        text = (body.message_preview or "").strip() or "UPI Analysis tracker: alerts enabled."
+        try:
+            telegram_send_message(token, chat_id, text)
+            telegram_sent = True
+        except Exception as e:
+            send_error = str(e)
+            logger.warning("Telegram send failed: %s", send_error)
+
     return {
         "ok": True,
-        "status": "stub",
-        "detail": "Attach WhatsApp Cloud API or Twilio WhatsApp; templates must be approved by Meta.",
+        "telegram_sent": telegram_sent,
+        "send_error": send_error,
+        "detail": "Chat ID identifies your Telegram user; the bot can only message users who have started the bot.",
     }
 
 

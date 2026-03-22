@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { MessageCircle, Loader2, CheckCircle2, Info } from 'lucide-react';
+import { Send, Loader2, CheckCircle2, Info } from 'lucide-react';
 
 const API_BASE = 'http://127.0.0.1:8000';
 
@@ -22,7 +22,6 @@ function buildAlertText(p: RealtimeUpdatesProps): string {
   ].join('\n');
 }
 
-/** E.164-style: digits with optional leading + */
 function normalizePhone(raw: string): string {
   const t = raw.trim().replace(/\s/g, '');
   if (!t) return '';
@@ -31,83 +30,129 @@ function normalizePhone(raw: string): string {
   return t.replace(/\D/g, '').length >= 10 ? `+${t.replace(/\D/g, '')}` : t;
 }
 
-function isPlausiblePhone(e164: string): boolean {
-  const digits = e164.replace(/\D/g, '');
-  return digits.length >= 10 && digits.length <= 15;
-}
-
 export default function RealtimeUpdates({ totalCredit, totalDebit, transactionCount }: RealtimeUpdatesProps) {
+  const [chatId, setChatId] = useState('');
   const [phone, setPhone] = useState('');
-  const [whatsappEnabled, setWhatsappEnabled] = useState(false);
+  const [telegramEnabled, setTelegramEnabled] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [lastSent, setLastSent] = useState<boolean | null>(null);
 
   const preview = buildAlertText({ totalCredit, totalDebit, transactionCount });
 
   const registerAlerts = useCallback(async () => {
-    const normalized = normalizePhone(phone);
-    if (whatsappEnabled && !isPlausiblePhone(normalized)) {
-      setSaveError('Enter a valid mobile number (10 digits or +country code).');
+    if (telegramEnabled && !chatId.trim()) {
+      setSaveError('Enter your Telegram chat ID (see steps below).');
       return;
     }
     setSaveError(null);
     setSaving(true);
     setSaved(false);
+    setLastSent(null);
     try {
-      const res = await fetch(`${API_BASE}/api/whatsapp/register`, {
+      const res = await fetch(`${API_BASE}/api/telegram/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          phone: normalized || null,
-          enabled: whatsappEnabled,
+          chat_id: chatId.trim(),
+          phone: normalizePhone(phone) || null,
+          enabled: telegramEnabled,
           message_preview: preview,
         }),
       });
+      const data = (await res.json()) as { detail?: string; telegram_sent?: boolean; send_error?: string | null };
       if (!res.ok) {
-        const t = await res.text();
-        throw new Error(t || `HTTP ${res.status}`);
+        throw new Error(typeof data.detail === 'string' ? data.detail : `HTTP ${res.status}`);
       }
       setSaved(true);
+      if (typeof data.telegram_sent === 'boolean') setLastSent(data.telegram_sent);
+      if (data.send_error) {
+        setSaveError(`Telegram send failed: ${data.send_error}`);
+      } else {
+        setSaveError(null);
+      }
     } catch (e) {
       setSaveError(e instanceof Error ? e.message : 'Could not reach server');
     } finally {
       setSaving(false);
     }
-  }, [phone, whatsappEnabled, preview]);
+  }, [chatId, phone, telegramEnabled, preview]);
 
   return (
-    <div className="realtime-whatsapp-root">
+    <div className="realtime-telegram-root">
       <section className="glass-panel realtime-panel realtime-panel--wide">
         <div className="realtime-icon-wrap">
-          <MessageCircle size={36} strokeWidth={1.5} />
+          <Send size={36} strokeWidth={1.5} />
         </div>
-        <h2 className="realtime-title">Real-time updates · WhatsApp</h2>
+        <h2 className="realtime-title">Real-time updates · Telegram</h2>
         <p className="realtime-copy">
-          Yes — you can send <strong>credit / debit summaries as text</strong> to a user&apos;s WhatsApp, but delivery is
-          not done in the browser alone. You need a provider such as{' '}
-          <strong>Meta WhatsApp Cloud API</strong>, <strong>Twilio WhatsApp</strong>, or{' '}
-          <strong>MessageBird</strong>, plus a verified business number. This screen collects the phone number and
-          registers intent; the sample API route logs the payload so you can wire sending server-side.
+          Alerts are sent as <strong>plain text</strong> (credit / debit summary) through your Telegram bot. The server
+          reads <code>TELEGRAM_BOT_TOKEN</code> from its <code>.env</code> file — no WhatsApp setup required.
         </p>
+
+        <div className="realtime-steps glass-panel">
+          <div className="realtime-preview-label">What you do in Telegram (one-time)</div>
+          <ol className="realtime-steps-list">
+            <li>
+              Open Telegram and search for <strong>@BotFather</strong>. Send <code>/newbot</code>, follow prompts, and copy
+              the <strong>HTTP API token</strong>. Put it in the project root <code>.env</code> as{' '}
+              <code>TELEGRAM_BOT_TOKEN=...</code> (see <code>.env.example</code>).
+            </li>
+            <li>
+              BotFather gives you a link to your bot — open it and tap <strong>Start</strong> (or send{' '}
+              <code>/start</code>). The bot is only allowed to message users who have started it.
+            </li>
+            <li>
+              Get your <strong>chat ID</strong>: after messaging your bot, open this URL in a browser (replace{' '}
+              <code>YOUR_TOKEN</code> with the same token as in <code>.env</code>):
+              <pre className="realtime-code-block">
+                https://api.telegram.org/botYOUR_TOKEN/getUpdates
+              </pre>
+              In the JSON, find <code>&quot;chat&quot;:&#123;&quot;id&quot;: 123456789</code> — that number is your{' '}
+              <strong>chat ID</strong>. You can also use bots like @userinfobot to see your ID.
+            </li>
+            <li>
+              Paste the chat ID below. Optionally add your phone number for your own records (Telegram delivery uses{' '}
+              <strong>chat ID</strong>, not phone).
+            </li>
+          </ol>
+        </div>
 
         <div className="realtime-info-banner">
           <Info size={18} />
           <span>
-            Flow: user opts in → backend schedules or sends templated messages → provider delivers to WhatsApp. Template
-            messages must be approved by Meta for marketing/utility categories.
+            If the token was ever shared publicly, open @BotFather → /revoke and generate a new token, then update{' '}
+            <code>.env</code>.
           </span>
         </div>
 
         <div className="realtime-form">
-          <label className="filter-label" htmlFor="wa-phone">
-            WhatsApp number
+          <label className="filter-label" htmlFor="tg-chat-id">
+            Telegram chat ID <span className="text-muted">(required for delivery)</span>
           </label>
           <input
-            id="wa-phone"
+            id="tg-chat-id"
+            type="text"
+            inputMode="numeric"
+            className="input"
+            placeholder="e.g. 123456789"
+            value={chatId}
+            onChange={(e) => {
+              setChatId(e.target.value);
+              setSaved(false);
+            }}
+            autoComplete="off"
+          />
+
+          <label className="filter-label" htmlFor="tg-phone">
+            Phone number <span className="text-muted">(optional)</span>
+          </label>
+          <input
+            id="tg-phone"
             type="tel"
             className="input"
-            placeholder="+91XXXXXXXXXX or 10-digit mobile"
+            placeholder="+91XXXXXXXXXX — optional, for your records only"
             value={phone}
             onChange={(e) => {
               setPhone(e.target.value);
@@ -119,13 +164,13 @@ export default function RealtimeUpdates({ totalCredit, totalDebit, transactionCo
           <label className="realtime-checkbox-row">
             <input
               type="checkbox"
-              checked={whatsappEnabled}
+              checked={telegramEnabled}
               onChange={(e) => {
-                setWhatsappEnabled(e.target.checked);
+                setTelegramEnabled(e.target.checked);
                 setSaved(false);
               }}
             />
-            <span>Send me WhatsApp alerts with credit &amp; debit summary text (when backend is connected)</span>
+            <span>Send this summary to my Telegram now (and use chat ID for future alerts)</span>
           </label>
         </div>
 
@@ -137,14 +182,15 @@ export default function RealtimeUpdates({ totalCredit, totalDebit, transactionCo
         <button type="button" className="btn btn-primary realtime-save-btn" onClick={registerAlerts} disabled={saving}>
           {saving ? (
             <>
-              <Loader2 className="spin" size={18} /> Saving…
+              <Loader2 className="spin" size={18} /> Sending…
             </>
           ) : saved ? (
             <>
-              <CheckCircle2 size={18} /> Saved (stub)
+              <CheckCircle2 size={18} /> Done
+              {lastSent === true ? ' — check Telegram' : lastSent === false ? ' (saved; see message above)' : ''}
             </>
           ) : (
-            'Save preferences & register with server'
+            'Save & send test to Telegram'
           )}
         </button>
 
