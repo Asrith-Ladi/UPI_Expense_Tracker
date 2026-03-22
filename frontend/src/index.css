@@ -1249,12 +1249,34 @@ body {
 }
 
 .realtime-panel {
-  padding: 48px 32px;
+  padding: 40px 32px;
   border-radius: var(--radius-lg);
-  text-align: center;
+  text-align: left;
   max-width: 560px;
   margin: 0 auto;
   animation: tagging-fade-in 0.45s ease both;
+}
+
+/* New horizontal header layout in Telegram card */
+.rt-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 18px;
+  margin-bottom: 28px;
+}
+
+.rt-icon-ring {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(16, 185, 129, 0.1));
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  color: var(--accent-secondary);
+  box-shadow: 0 0 18px rgba(59, 130, 246, 0.12);
 }
 
 .realtime-icon-wrap {
@@ -1268,9 +1290,17 @@ body {
 }
 
 .realtime-title {
-  font-size: 22px;
-  font-weight: 700;
-  margin-bottom: 12px;
+  font-size: 20px;
+  font-weight: 800;
+  margin: 0 0 4px;
+  color: var(--text-primary);
+}
+
+.rt-subtitle {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 0;
+  line-height: 1.5;
 }
 
 .realtime-copy {
@@ -1640,4 +1670,243 @@ body {
 .email-actions-row .email-connect-btn {
   flex: 1;
   min-width: 200px;
+}
+
+/* ── Premium Telegram Chat ID guide block ── */
+.realtime-chatid-premium {
+  position: relative;
+  margin-bottom: 20px;
+  padding: 22px 22px 18px;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(
+    135deg,
+    rgba(250, 204, 21, 0.08) 0%,
+    rgba(234, 179, 8, 0.06) 40%,
+    rgba(251, 146, 60, 0.05) 100%
+  );
+  border: 1px solid rgba(250, 204, 21, 0.28);
+  box-shadow: 0 0 32px rgba(250, 204, 21, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+}
+
+.realtime-chatid-premium::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, rgba(250, 204, 21, 0.6), rgba(251, 146, 60, 0.4), rgba(250, 204, 21, 0.6));
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+
+.realtime-chatid-premium__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.realtime-chatid-crown {
+  color: #fbbf24;
+  flex-shrink: 0;
+  filter: drop-shadow(0 0 6px rgba(251, 191, 36, 0.5));
+}
+
+.realtime-chatid-premium__title {
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: linear-gradient(90deg, #fbbf24, #f97316);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.realtime-chatid-premium__desc {
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  margin: 0 0 16px;
+}
+
+.realtime-chatid-methods {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.realtime-chatid-method {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.realtime-chatid-method__num {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.25), rgba(249, 115, 22, 0.15));
+  border: 1px solid rgba(251, 191, 36, 0.35);
+  font-size: 12px;
+  font-weight: 800;
+  color: #fbbf24;
+}
+
+.realtime-chatid-method__body {
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  flex: 1;
+}
+
+.realtime-chatid-method__body strong {
+  color: var(--text-primary);
+}
+
+.realtime-chatid-link {
+  color: #fbbf24;
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.2s ease, text-shadow 0.2s ease;
+}
+
+.realtime-chatid-link:hover {
+  color: #f97316;
+  text-decoration: underline;
+  text-shadow: 0 0 8px rgba(251, 191, 36, 0.3);
+}
+
+.realtime-chatid-doclink {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #fbbf24;
+  text-decoration: none;
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  background: rgba(251, 191, 36, 0.07);
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.realtime-chatid-doclink:hover {
+  background: rgba(251, 191, 36, 0.14);
+  border-color: rgba(251, 191, 36, 0.5);
+  color: #f97316;
+}
+
+/* ── Premium Email → Telegram Summary Panel ── */
+.email-summary-premium {
+  position: relative;
+  padding: 28px 28px 22px;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(
+    135deg,
+    rgba(16, 185, 129, 0.07) 0%,
+    rgba(59, 130, 246, 0.05) 50%,
+    rgba(16, 185, 129, 0.04) 100%
+  );
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  box-shadow: 0 0 32px rgba(16, 185, 129, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  overflow: hidden;
+  animation: tagging-fade-in 0.4s ease both;
+}
+
+.email-summary-premium::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, rgba(16, 185, 129, 0.7), rgba(59, 130, 246, 0.5), rgba(16, 185, 129, 0.7));
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+
+.email-summary-premium__header {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.email-summary-premium__icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(59, 130, 246, 0.12));
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: var(--accent-primary);
+}
+
+.email-summary-premium__title {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: 0 0 3px;
+}
+
+.email-summary-premium__meta {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.email-summary-table-wrap {
+  margin-bottom: 20px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+}
+
+.email-summary-empty {
+  font-size: 13px;
+  color: var(--text-secondary);
+  text-align: center;
+  padding: 16px 0 20px;
+  margin: 0;
+}
+
+/* Telegram send row inside summary panel */
+.email-summary-tg-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-end;
+  margin-top: 4px;
+}
+
+.email-summary-tg-input-wrap {
+  flex: 1;
+  min-width: 200px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.email-summary-send-btn {
+  flex-shrink: 0;
+  white-space: nowrap;
+  align-self: flex-end;
+  padding: 11px 20px !important;
+}
+
+.email-summary-tg-success {
+  margin: 10px 0 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent-primary);
 }

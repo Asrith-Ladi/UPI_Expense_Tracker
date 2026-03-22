@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { Send, Loader2, CheckCircle2, Info } from 'lucide-react';
+import { Send, Loader2, CheckCircle2, Crown, ExternalLink, Zap } from 'lucide-react';
 
 const API_BASE = 'http://127.0.0.1:8000';
 
@@ -15,10 +15,10 @@ function formatInr(n: number): string {
 
 function buildAlertText(p: RealtimeUpdatesProps): string {
   return [
-    'UPI Analysis tracker',
-    `Total credit: ${formatInr(p.totalCredit)}`,
-    `Total debit: ${formatInr(p.totalDebit)}`,
-    `Transactions (current filters): ${p.transactionCount}`,
+    '📊 UPI Analysis Summary',
+    `💚 Total credit : ${formatInr(p.totalCredit)}`,
+    `🔴 Total debit  : ${formatInr(p.totalDebit)}`,
+    `📋 Transactions : ${p.transactionCount}`,
   ].join('\n');
 }
 
@@ -43,7 +43,7 @@ export default function RealtimeUpdates({ totalCredit, totalDebit, transactionCo
 
   const registerAlerts = useCallback(async () => {
     if (telegramEnabled && !chatId.trim()) {
-      setSaveError('Enter your Telegram chat ID (see steps below).');
+      setSaveError('Enter your Telegram Chat ID first.');
       return;
     }
     setSaveError(null);
@@ -62,16 +62,10 @@ export default function RealtimeUpdates({ totalCredit, totalDebit, transactionCo
         }),
       });
       const data = (await res.json()) as { detail?: string; telegram_sent?: boolean; send_error?: string | null };
-      if (!res.ok) {
-        throw new Error(typeof data.detail === 'string' ? data.detail : `HTTP ${res.status}`);
-      }
+      if (!res.ok) throw new Error(typeof data.detail === 'string' ? data.detail : `HTTP ${res.status}`);
       setSaved(true);
       if (typeof data.telegram_sent === 'boolean') setLastSent(data.telegram_sent);
-      if (data.send_error) {
-        setSaveError(`Telegram send failed: ${data.send_error}`);
-      } else {
-        setSaveError(null);
-      }
+      setSaveError(data.send_error ? `Send failed: ${data.send_error}` : null);
     } catch (e) {
       setSaveError(e instanceof Error ? e.message : 'Could not reach server');
     } finally {
@@ -82,54 +76,69 @@ export default function RealtimeUpdates({ totalCredit, totalDebit, transactionCo
   return (
     <div className="realtime-telegram-root">
       <section className="glass-panel realtime-panel realtime-panel--wide">
-        <div className="realtime-icon-wrap">
-          <Send size={36} strokeWidth={1.5} />
-        </div>
-        <h2 className="realtime-title">Real-time updates · Telegram</h2>
-        <p className="realtime-copy">
-          Alerts are sent as <strong>plain text</strong> (credit / debit summary) through your Telegram bot. The server
-          reads <code>TELEGRAM_BOT_TOKEN</code> from its <code>.env</code> file — no WhatsApp setup required.
-        </p>
 
-        <div className="realtime-steps glass-panel">
-          <div className="realtime-preview-label">What you do in Telegram (one-time)</div>
-          <ol className="realtime-steps-list">
-            <li>
-              Open Telegram and search for <strong>@BotFather</strong>. Send <code>/newbot</code>, follow prompts, and copy
-              the <strong>HTTP API token</strong>. Put it in the project root <code>.env</code> as{' '}
-              <code>TELEGRAM_BOT_TOKEN=...</code> (see <code>.env.example</code>).
-            </li>
-            <li>
-              BotFather gives you a link to your bot — open it and tap <strong>Start</strong> (or send{' '}
-              <code>/start</code>). The bot is only allowed to message users who have started it.
-            </li>
-            <li>
-              Get your <strong>chat ID</strong>: after messaging your bot, open this URL in a browser (replace{' '}
-              <code>YOUR_TOKEN</code> with the same token as in <code>.env</code>):
-              <pre className="realtime-code-block">
-                https://api.telegram.org/botYOUR_TOKEN/getUpdates
-              </pre>
-              In the JSON, find <code>&quot;chat&quot;:&#123;&quot;id&quot;: 123456789</code> — that number is your{' '}
-              <strong>chat ID</strong>. You can also use bots like @userinfobot to see your ID.
-            </li>
-            <li>
-              Paste the chat ID below. Optionally add your phone number for your own records (Telegram delivery uses{' '}
-              <strong>chat ID</strong>, not phone).
-            </li>
-          </ol>
+        {/* Header */}
+        <div className="rt-header">
+          <div className="rt-icon-ring">
+            <Send size={22} strokeWidth={1.8} />
+          </div>
+          <div>
+            <h2 className="realtime-title">Telegram Alerts</h2>
+            <p className="rt-subtitle">Push your UPI summary straight to Telegram — instant &amp; private.</p>
+          </div>
         </div>
 
-        <div className="realtime-info-banner">
-          <Info size={18} />
-          <span>
-            If the token was ever shared publicly, open @BotFather → /revoke and generate a new token, then update{' '}
-            <code>.env</code>.
-          </span>
+        {/* Gold: How to get Chat ID */}
+        <div className="realtime-chatid-premium">
+          <div className="realtime-chatid-premium__header">
+            <Crown size={16} className="realtime-chatid-crown" />
+            <span className="realtime-chatid-premium__title">How to get your Telegram Chat ID</span>
+          </div>
+          <p className="realtime-chatid-premium__desc">
+            Your <strong>Chat ID</strong> is a unique number that tells the bot where to deliver alerts. Two quick methods:
+          </p>
+
+          <div className="realtime-chatid-methods">
+            <div className="realtime-chatid-method">
+              <div className="realtime-chatid-method__num">1</div>
+              <div className="realtime-chatid-method__body">
+                <strong>Via an ID-bot</strong> — Message{' '}
+                <a href="https://t.me/chatIDrobot" target="_blank" rel="noopener noreferrer" className="realtime-chatid-link">
+                  @chatIDrobot
+                </a>{' '}
+                or{' '}
+                <a href="https://t.me/GetTheirIDBot" target="_blank" rel="noopener noreferrer" className="realtime-chatid-link">
+                  @GetTheirIDBot
+                </a>{' '}
+                on Telegram — they reply instantly with your numeric ID.
+              </div>
+            </div>
+
+            <div className="realtime-chatid-method">
+              <div className="realtime-chatid-method__num">2</div>
+              <div className="realtime-chatid-method__body">
+                <strong>Via getUpdates</strong> — After messaging your bot, open in a browser:
+                <pre className="realtime-code-block">https://api.telegram.org/botYOUR_TOKEN/getUpdates</pre>
+                Look for <code>"chat":{"{ "}"id": 123456789</code> — that number is your Chat ID.
+              </div>
+            </div>
+          </div>
+
+          <a
+            href="https://www.forwardmsg.com/docs/how_to_obtain_telegram_chat_id"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="realtime-chatid-doclink"
+          >
+            <ExternalLink size={13} />
+            Full guide on forwardmsg.com
+          </a>
         </div>
 
+        {/* Form */}
         <div className="realtime-form">
           <label className="filter-label" htmlFor="tg-chat-id">
-            Telegram chat ID <span className="text-muted">(required for delivery)</span>
+            Your Telegram Chat ID <span className="text-muted">(required)</span>
           </label>
           <input
             id="tg-chat-id"
@@ -138,26 +147,20 @@ export default function RealtimeUpdates({ totalCredit, totalDebit, transactionCo
             className="input"
             placeholder="e.g. 123456789"
             value={chatId}
-            onChange={(e) => {
-              setChatId(e.target.value);
-              setSaved(false);
-            }}
+            onChange={(e) => { setChatId(e.target.value); setSaved(false); }}
             autoComplete="off"
           />
 
           <label className="filter-label" htmlFor="tg-phone">
-            Phone number <span className="text-muted">(optional)</span>
+            Phone number <span className="text-muted">(optional — for your records only)</span>
           </label>
           <input
             id="tg-phone"
             type="tel"
             className="input"
-            placeholder="+91XXXXXXXXXX — optional, for your records only"
+            placeholder="+91XXXXXXXXXX"
             value={phone}
-            onChange={(e) => {
-              setPhone(e.target.value);
-              setSaved(false);
-            }}
+            onChange={(e) => { setPhone(e.target.value); setSaved(false); }}
             autoComplete="tel"
           />
 
@@ -165,39 +168,42 @@ export default function RealtimeUpdates({ totalCredit, totalDebit, transactionCo
             <input
               type="checkbox"
               checked={telegramEnabled}
-              onChange={(e) => {
-                setTelegramEnabled(e.target.checked);
-                setSaved(false);
-              }}
+              onChange={(e) => { setTelegramEnabled(e.target.checked); setSaved(false); }}
             />
-            <span>Send this summary to my Telegram now (and use chat ID for future alerts)</span>
+            <span>Send a test message to my Telegram now</span>
           </label>
         </div>
 
+        {/* Preview */}
         <div className="realtime-preview glass-panel">
-          <div className="realtime-preview-label">Message preview (plain text)</div>
+          <div className="realtime-preview-label">
+            <Zap size={12} style={{ display: 'inline', marginRight: 5, verticalAlign: 'middle' }} />
+            Message preview
+          </div>
           <pre className="realtime-preview-body">{preview}</pre>
         </div>
 
-        <button type="button" className="btn btn-primary realtime-save-btn" onClick={registerAlerts} disabled={saving}>
+        {/* CTA */}
+        <button
+          type="button"
+          className="btn btn-primary realtime-save-btn"
+          onClick={registerAlerts}
+          disabled={saving}
+        >
           {saving ? (
-            <>
-              <Loader2 className="spin" size={18} /> Sending…
-            </>
+            <><Loader2 className="spin" size={18} /> Sending…</>
           ) : saved ? (
             <>
               <CheckCircle2 size={18} /> Done
-              {lastSent === true ? ' — check Telegram' : lastSent === false ? ' (saved; see message above)' : ''}
+              {lastSent === true ? ' — check Telegram ✅' : lastSent === false ? ' (see message above)' : ''}
             </>
           ) : (
-            'Save & send test to Telegram'
+            <><Send size={16} /> Save &amp; send test</>
           )}
         </button>
 
         {saveError && (
-          <p className="realtime-error" role="alert">
-            {saveError}
-          </p>
+          <p className="realtime-error" role="alert">{saveError}</p>
         )}
       </section>
     </div>

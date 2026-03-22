@@ -199,5 +199,61 @@ def telegram_register(body: TelegramRegister):
     }
 
 
+class EmailSummaryRow(BaseModel):
+    date: str
+    from_: str = ''
+    subject: str = ''
+    snippet: str = ''
+
+class TelegramEmailSummary(BaseModel):
+    chat_id: str
+    rows: List[EmailSummaryRow]
+    bank: str = ''
+
+
+@app.post("/api/telegram/send-email-summary")
+def telegram_send_email_summary(body: TelegramEmailSummary):
+    """
+    Formats the supplied email rows (last-2-days Gmail messages) as plain text
+    and sends them to the given Telegram chat_id via the bot token in .env.
+    """
+    token = (os.environ.get("TELEGRAM_BOT_TOKEN") or "").strip()
+    chat_id = (body.chat_id or "").strip()
+
+    if not token:
+        raise HTTPException(
+            status_code=503,
+            detail="TELEGRAM_BOT_TOKEN not set in server .env.",
+        )
+    if not chat_id:
+        raise HTTPException(status_code=400, detail="chat_id is required.")
+
+    bank_label = body.bank.upper() if body.bank else "Bank"
+    lines = [f"📧 {bank_label} — Email Summary (last 2 days)", ""]
+
+    if body.rows:
+        for r in body.rows:
+            lines.append(f"📅 {r.date}")
+            lines.append(f"   From    : {r.from_}")
+            lines.append(f"   Subject : {r.subject}")
+            if r.snippet:
+                snip = r.snippet[:120] + ("…" if len(r.snippet) > 120 else "")
+                lines.append(f"   Preview : {snip}")
+            lines.append("")
+        lines.append(f"Total : {len(body.rows)} email(s) collected")
+    else:
+        lines.append("No emails found in the last 2 days.")
+
+    text = "\n".join(lines)
+
+    try:
+        telegram_send_message(token, chat_id, text)
+        return {"ok": True, "sent": True, "error": None}
+    except Exception as e:
+        err = str(e)
+        logger.warning("Telegram email-summary send failed: %s", err)
+        return {"ok": False, "sent": False, "error": err}
+
+
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
