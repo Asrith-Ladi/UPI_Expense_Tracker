@@ -269,7 +269,11 @@ function AppShellInner({ onLogout }: AppShellProps) {
           </div>
         ) : activeTab === 'realtime' ? (
           taggingConfirmed ? (
-            <RealtimeUpdates />
+            <RealtimeUpdates
+              totalCredit={metrics.totalCredit}
+              totalDebit={metrics.totalDebit}
+              transactionCount={metrics.transactions}
+            />
           ) : (
             <div className="glass-panel step-locked-panel">
               <h3 className="chart-title">Real-time updates</h3>

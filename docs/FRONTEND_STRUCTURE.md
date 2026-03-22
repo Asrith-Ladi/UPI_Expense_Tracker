@@ -36,7 +36,8 @@ This document maps UI areas to source files so you can jump straight to the righ
 | Charts, metrics, transaction table | `src/dashboard/DashboardHome.tsx` |
 | Counterparty tagging, thresholds, expandable editable grid | `src/tagging/TaggingView.tsx` |
 | Gmail (OAuth + top 10 messages) | `src/email/EmailIntegration.tsx` — set `VITE_GOOGLE_CLIENT_ID` (see `frontend/.env.example`) |
-| Real-time placeholder (always available) | `src/realtime/RealtimeUpdates.tsx` |
+| Real-time: WhatsApp opt-in UI (server stub) | `src/realtime/RealtimeUpdates.tsx` — `POST /api/whatsapp/register` in `main.py` |
+| Bank list for Gmail search (AXIS active) | `src/email/bankConfig.ts` |
 
 ## Shared types
 

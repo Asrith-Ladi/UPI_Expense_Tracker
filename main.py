@@ -1,6 +1,7 @@
 import os
 import json
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
+from pydantic import BaseModel
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import pandas as pd
@@ -8,7 +9,6 @@ from core.processor import process_uploaded_file, load_and_process_data
 from core.tagging import extract_tag, extract_main_detail, apply_custom_tags
 from utils import setup_logger
 import uvicorn
-import math
 
 # Configure logging
 logger = setup_logger('FinanceDashboard.API')
@@ -113,6 +113,33 @@ async def process_statements(files: List[UploadFile] = File(...)):
     # Return as list of dictionaries
     records = combined_df.to_dict(orient='records')
     return {"data": records}
+
+
+class WhatsAppRegister(BaseModel):
+    """Stub payload for future WhatsApp Business / Twilio integration."""
+    phone: Optional[str] = None
+    enabled: bool = False
+    message_preview: Optional[str] = None
+
+
+@app.post("/api/whatsapp/register")
+def whatsapp_register(body: WhatsAppRegister):
+    """
+    Accepts user phone + opt-in for WhatsApp alerts (credit/debit text).
+    Does not send WhatsApp messages — connect Meta Cloud API or Twilio here.
+    """
+    logger.info(
+        "WhatsApp register stub: phone=%s enabled=%s preview_chars=%s",
+        body.phone,
+        body.enabled,
+        len(body.message_preview or ""),
+    )
+    return {
+        "ok": True,
+        "status": "stub",
+        "detail": "Attach WhatsApp Cloud API or Twilio WhatsApp; templates must be approved by Meta.",
+    }
+
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

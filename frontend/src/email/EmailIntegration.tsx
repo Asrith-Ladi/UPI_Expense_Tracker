@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Mail, Loader2, AlertCircle, ExternalLink } from 'lucide-react';
+import { BANK_OPTIONS, type BankId } from './bankConfig';
 
 const GMAIL_READONLY = 'https://www.googleapis.com/auth/gmail.readonly';
 const GSI_SCRIPT = 'https://accounts.google.com/gsi/client';
@@ -74,11 +75,14 @@ async function fetchMessageRow(id: string, token: string): Promise<GmailMessageR
   };
 }
 
-async function fetchTop10Messages(token: string): Promise<GmailMessageRow[]> {
-  const listR = await fetch(
-    'https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=10',
-    { headers: { Authorization: `Bearer ${token}` } }
-  );
+/** List up to 10 messages matching Gmail search `q`, newest first (API default ordering). */
+async function fetchTop10WithQuery(token: string, searchQuery: string): Promise<GmailMessageRow[]> {
+  const params = new URLSearchParams({ maxResults: '10' });
+  if (searchQuery.trim()) params.set('q', searchQuery.trim());
+
+  const listR = await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages?${params.toString()}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
   if (!listR.ok) {
     const t = await listR.text();
     throw new Error(t || `Gmail list failed (${listR.status})`);
@@ -100,6 +104,8 @@ export default function EmailIntegration() {
       return envId || '';
     }
   });
+  const [selectedBank, setSelectedBank] = useState<BankId>('AXIS');
+  const [accessToken, setAccessToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [rows, setRows] = useState<GmailMessageRow[] | null>(null);
@@ -117,10 +123,26 @@ export default function EmailIntegration() {
     }
   }, []);
 
+  const bankQuery = BANK_OPTIONS.find((b) => b.id === selectedBank)?.query ?? 'axis';
+
+  const runFetch = useCallback(
+    async (token: string) => {
+      const q = bankQuery;
+      const data = await fetchTop10WithQuery(token, q);
+      setRows(data);
+    },
+    [bankQuery]
+  );
+
   const connectGmail = useCallback(async () => {
     const clientId = clientIdInput.trim();
     if (!clientId) {
       setError('Enter your Google OAuth Client ID (Web application).');
+      return;
+    }
+    const bank = BANK_OPTIONS.find((b) => b.id === selectedBank);
+    if (!bank?.enabled) {
+      setError('Only AXIS is available for search right now.');
       return;
     }
     setError(null);
@@ -145,8 +167,8 @@ export default function EmailIntegration() {
               return;
             }
             try {
-              const data = await fetchTop10Messages(resp.access_token);
-              setRows(data);
+              setAccessToken(resp.access_token);
+              await runFetch(resp.access_token);
               resolve();
             } catch (e) {
               reject(e instanceof Error ? e : new Error(String(e)));
@@ -160,7 +182,28 @@ export default function EmailIntegration() {
     } finally {
       setLoading(false);
     }
-  }, [clientIdInput]);
+  }, [clientIdInput, selectedBank, runFetch]);
+
+  const refreshMails = useCallback(async () => {
+    if (!accessToken) {
+      setError('Connect Gmail first.');
+      return;
+    }
+    const bank = BANK_OPTIONS.find((b) => b.id === selectedBank);
+    if (!bank?.enabled) {
+      setError('Only AXIS is available for search right now.');
+      return;
+    }
+    setError(null);
+    setLoading(true);
+    try {
+      await runFetch(accessToken);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to load messages');
+    } finally {
+      setLoading(false);
+    }
+  }, [accessToken, selectedBank, runFetch]);
 
   return (
     <div className="email-gmail-root">
@@ -170,18 +213,39 @@ export default function EmailIntegration() {
         </div>
         <h2 className="email-integration-title">Gmail integration</h2>
         <p className="email-integration-copy">
-          Connect with read-only Gmail access to list your <strong>10 most recent messages</strong> (by internal time). You
-          need a Google Cloud project with the <strong>Gmail API</strong> enabled and an <strong>OAuth 2.0 Web client</strong>{' '}
-          ID. Add your app origin (e.g. <code>http://localhost:5173</code>) under Authorized JavaScript origins.
+          Choose a bank (search keyword). After Gmail is authorized, we fetch the <strong>10 most recent messages</strong>{' '}
+          matching that keyword, ordered by time. You need a Google Cloud project with <strong>Gmail API</strong> and an{' '}
+          <strong>OAuth 2.0 Web client</strong>; add your origin under Authorized JavaScript origins.
         </p>
         <a
           className="email-doc-link"
-          href="https://developers.google.com/gmail/api/quickstart/js"
+          href="https://developers.google.com/gmail/api/reference/rest/v1/users.messages/list"
           target="_blank"
           rel="noreferrer"
         >
-          Gmail API browser guide <ExternalLink size={14} />
+          Gmail messages.list (q parameter) <ExternalLink size={14} />
         </a>
+
+        <div className="email-bank-row" role="group" aria-label="Bank for email search">
+          <span className="filter-label">Bank</span>
+          <div className="email-bank-pills">
+            {BANK_OPTIONS.map((b) => (
+              <button
+                key={b.id}
+                type="button"
+                className={`email-bank-pill ${selectedBank === b.id ? 'is-active' : ''} ${!b.enabled ? 'is-disabled' : ''}`}
+                disabled={!b.enabled}
+                onClick={() => b.enabled && setSelectedBank(b.id)}
+                title={!b.enabled ? `${b.display} — coming soon` : `Search with keyword: ${b.query}`}
+              >
+                {b.display}
+              </button>
+            ))}
+          </div>
+          <p className="email-bank-hint text-muted">
+            Only <strong>AXIS</strong> is enabled. Search uses Gmail query: <code>{bankQuery}</code>
+          </p>
+        </div>
 
         <div className="email-client-field">
           <label className="filter-label" htmlFor="gmail-client-id">
@@ -197,17 +261,24 @@ export default function EmailIntegration() {
           />
         </div>
 
-        <button type="button" className="btn btn-primary email-connect-btn" onClick={connectGmail} disabled={loading}>
-          {loading ? (
-            <>
-              <Loader2 className="spin" size={18} /> Connecting…
-            </>
-          ) : (
-            <>
-              <Mail size={18} /> Connect Gmail &amp; load top 10
-            </>
+        <div className="email-actions-row">
+          <button type="button" className="btn btn-primary email-connect-btn" onClick={connectGmail} disabled={loading}>
+            {loading ? (
+              <>
+                <Loader2 className="spin" size={18} /> Working…
+              </>
+            ) : (
+              <>
+                <Mail size={18} /> Connect Gmail &amp; fetch AXIS (10)
+              </>
+            )}
+          </button>
+          {accessToken && (
+            <button type="button" className="btn btn-outline" onClick={refreshMails} disabled={loading}>
+              Refresh list
+            </button>
           )}
-        </button>
+        </div>
 
         {error && (
           <div className="email-error-banner" role="alert">
@@ -219,7 +290,9 @@ export default function EmailIntegration() {
 
       {rows && rows.length > 0 && (
         <section className="glass-panel email-gmail-table-wrap">
-          <h3 className="chart-title">Latest 10 messages</h3>
+          <h3 className="chart-title">
+            Top 10 messages · search: <code>{bankQuery}</code>
+          </h3>
           <div className="email-table-scroll">
             <table className="data-table email-messages-table">
               <thead>
@@ -245,9 +318,9 @@ export default function EmailIntegration() {
         </section>
       )}
 
-      {rows && rows.length === 0 && (
+      {rows && rows.length === 0 && accessToken && (
         <p className="text-muted" style={{ textAlign: 'center' }}>
-          No messages returned.
+          No messages matched <code>{bankQuery}</code>.
         </p>
       )}
     </div>

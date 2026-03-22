@@ -1461,3 +1461,146 @@ body {
 .spin {
   animation: spin 0.9s linear infinite;
 }
+
+.realtime-whatsapp-root {
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.realtime-panel--wide {
+  max-width: 720px;
+  text-align: left;
+}
+
+.realtime-info-banner {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  background: rgba(59, 130, 246, 0.08);
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  margin-bottom: 20px;
+}
+
+.realtime-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.realtime-checkbox-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 14px;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.realtime-checkbox-row input {
+  margin-top: 3px;
+}
+
+.realtime-preview {
+  padding: 14px 16px;
+  margin-bottom: 16px;
+  border-radius: var(--radius-md);
+}
+
+.realtime-preview-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+.realtime-preview-body {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  color: var(--text-primary);
+  font-family: ui-monospace, monospace;
+}
+
+.realtime-save-btn {
+  width: 100%;
+  justify-content: center;
+}
+
+.realtime-error {
+  color: var(--danger);
+  font-size: 13px;
+  margin-top: 12px;
+}
+
+.email-bank-row {
+  margin-bottom: 20px;
+}
+
+.email-bank-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.email-bank-pill {
+  min-width: 88px;
+  padding: 10px 18px;
+  border-radius: 999px;
+  border: 1px solid var(--border-color);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, opacity 0.2s ease;
+}
+
+.email-bank-pill.is-active {
+  border-color: rgba(16, 185, 129, 0.5);
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(59, 130, 246, 0.1));
+}
+
+.email-bank-pill.is-disabled:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  filter: grayscale(0.5);
+}
+
+.email-bank-pill:not(:disabled):hover {
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.email-bank-hint {
+  margin: 10px 0 0;
+  font-size: 12px;
+}
+
+.email-bank-hint code {
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.email-actions-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+
+.email-actions-row .email-connect-btn {
+  flex: 1;
+  min-width: 200px;
+}
