@@ -815,6 +815,15 @@ body {
   color: var(--text-secondary);
 }
 
+.tagging-combine-footnote {
+  margin: 0;
+  max-width: 220px;
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--text-secondary);
+  text-align: center;
+}
+
 .tagging-switch {
   display: flex;
   flex-direction: column;

@@ -183,6 +183,9 @@ export default function TaggingView({ transactions }: { transactions: TaggingTra
               </small>
             </span>
           </button>
+          <p className="tagging-combine-footnote">
+            If you only fill one field, that rule is used by itself. AND/OR applies when both count and amount are set.
+          </p>
         </div>
 
         <div className="tagging-field">
